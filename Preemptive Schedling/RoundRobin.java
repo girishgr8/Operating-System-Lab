@@ -3,7 +3,7 @@ import java.io.*;
 
 interface Global {
     Random r = new Random();
-    final static int n = r.nextInt((10) + 1) + 5;
+    final static int n = 6;
     final static int timeSlice = r.nextInt(6) + 1;
     static Vector<Process> copy = new Vector<Process>();
     static Vector<Process> readyQueue = new Vector<Process>();

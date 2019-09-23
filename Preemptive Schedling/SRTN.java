@@ -3,7 +3,7 @@ import java.io.*;
 
 interface Global {
     Random r = new Random();
-    final static int n = 10;
+    final static int n = 7;
     static Vector<Process> copy = new Vector<Process>();
     static Vector<Process> readyQueue = new Vector<Process>();
     static Queue<Process> globalQueue = new LinkedList<Process>();
@@ -12,10 +12,9 @@ interface Global {
 
 class SRTN implements Global {
     Scanner sc = new Scanner(System.in);
-
     public static void main(String[] args) throws IOException, InterruptedException {
-        System.out.println("SRTN(Shortest Remaining Time Next)");
-        // Thread.currentThread().sleep(3000);
+        System.out.println("SRTN(Shortest Remaining Time Next) is preemptive scheduling algorithm, where if a newly arriving process has lesser execution time, then that process is scheduled first and currently executing process is preempted.\nThis algorithm may starve longer executing processes");
+        Thread.currentThread().sleep(3000);
         System.out.println("Number of processes = " + n + "\n");
         Output output = new Output();
         output.setName("Output Thread");
@@ -109,32 +108,31 @@ class Output extends Thread implements Global {
                     }
 
                     System.out.println();
-                    // System.out.print(timeline.lastElement());
                     int i = new ShortestProcess().getProcessByShortestRemainingTime();
                     Process process;
                     if (readyQueue.size() == 0 && timeline.lastElement() != 0) {
-                        System.out.print("____|IDLE|____"); // print IDLE
+                        System.out.print("____|IDLE|____");
                         timeline.add(globalQueue.peek().at);
                         ganttChart += "____|IDLE|____" + globalQueue.peek().at;
                         continue;
                     } else if (readyQueue.firstElement().at - timeline.lastElement() > 0
                             && timeline.lastElement() == 0) {
-                        System.out.print("0____|IDLE|____" + readyQueue.firstElement().at); // print IDLE
+                        System.out.print("0____|IDLE|____" + readyQueue.firstElement().at);
                         timeline.add(readyQueue.firstElement().at);
                         ganttChart += "____|IDLE|____" + readyQueue.firstElement().at;
                         continue;
                     } else if (readyQueue.firstElement().at - timeline.lastElement() > 0
                             && timeline.lastElement() != 0) {
-                        System.out.print("____|IDLE|____" + readyQueue.firstElement().at); // print IDLE
+                        System.out.print("____|IDLE|____" + readyQueue.firstElement().at); 
                         timeline.add(readyQueue.firstElement().at);
                         ganttChart += "____|IDLE|____" + readyQueue.firstElement().at;
                         continue;
                     } else if (readyQueue.size() == 1 && globalQueue.size() == 0) {
                         process = readyQueue.remove(i);
-                        System.out.println(timeline.lastElement() + process.rt);
+                        //System.out.println(timeline.lastElement() + process.rt);
+                        timeline.add(timeline.lastElement() + process.rt);
                         ganttChart += "____|P" + process.pid + "|____" + timeline.lastElement();
                         System.out.println(ganttChart);
-                        timeline.add(timeline.lastElement() + process.rt);
                         process.tt = timeline.lastElement() - process.at;
                         process.wt = process.tt - process.bt;
                         process.rt = 0;
@@ -182,7 +180,6 @@ class Output extends Thread implements Global {
                             process.wt = process.tt - process.bt;
                         } else {
                             if (process.rt <= readyQueue.firstElement().rt) {
-                                // System.out.print("____|P" + process.pid + "|____");
                                 pet = process.rt;
                                 timeline.add(timeline.lastElement() + process.rt);
                                 ganttChart += "____|P" + process.pid + "|____" + timeline.lastElement();
@@ -193,14 +190,12 @@ class Output extends Thread implements Global {
                                 addProcessByArrivalTime();
                             } else {
                                 if (readyQueue.size() == 1 && globalQueue.size() == 0) {
-                                    // System.out.print("____|P" + process.pid + "|____");
                                     timeline.add(timeline.lastElement() + process.rt);
                                     ganttChart += "____|P" + process.pid + "|____" + timeline.lastElement();
                                     pet = process.rt;
                                     process.newly = false;
                                     addProcessByArrivalTime();
                                 } else {
-                                    // System.out.print("____|P" + process.pid + "|____");
                                     pet = readyQueue.firstElement().at - process.rt;
                                     process.rt -= pet;
                                     timeline.add(timeline.lastElement() + readyQueue.firstElement().at - process.rt);
@@ -229,7 +224,6 @@ class Output extends Thread implements Global {
                 break;
             }
         } catch (Exception e) {
-            // Thread.currentThread().interrupt();
             System.out.println("Output class error= " + e);
         }
     }
@@ -244,6 +238,5 @@ class Output extends Thread implements Global {
             else
                 break;
         }
-        // System.out.println("readyQueue = \n" + readyQueue);
     }
 }

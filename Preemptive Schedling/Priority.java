@@ -3,7 +3,7 @@ import java.io.*;
 
 interface Global {
     Random r = new Random();
-    final static int n = r.nextInt((10) + 1) + 5;
+    final static int n = 7;
     static Vector<Process> copy = new Vector<Process>();
     static Vector<Process> readyQueue = new Vector<Process>();
     static Queue<Process> globalQueue = new LinkedList<Process>();
@@ -130,12 +130,18 @@ class Output extends Thread implements Global {
                         timeline.add(readyQueue.firstElement().at);
                         ganttChart += "____|IDLE|____" + readyQueue.firstElement().at;
                         continue;
-                    } else if (readyQueue.size() == 0 && timeline.lastElement() != 0 && globalQueue.size() != 0) {
+                    }else if(readyQueue.size()==1 && globalQueue.size()==0){
+						timeline.add(timeline.lastElement() + readyQueue.firstElement().rt);
+						ganttChart += "____|P"+ readyQueue.get(0).pid + "|____" +timeline.lastElement();
+						System.out.println(ganttChart);
+						readyQueue.remove(0);
+					}					
+					else if (readyQueue.size() == 0 && timeline.lastElement() != 0 && globalQueue.size() != 0) {
                         timeline.add(timeline.lastElement() + globalQueue.peek().at);
                         System.out.print("____|IDLE|____" + globalQueue.peek().at);
                         ganttChart += "____|IDLE|____" + globalQueue.peek().at;
-
-                    } else {
+                    } 
+					else {
                         process = readyQueue.remove(i);
                         boolean preempt = false;
                         ganttChart += "____|P" + process.pid + "|____";
@@ -144,8 +150,7 @@ class Output extends Thread implements Global {
                             System.out.println("\nRQ at time instant = " + timeline.lastElement() + " is: ");
                             System.out.println("\nPID\t\tAT\t\tBT\t\tRT\t\tPR");
                             for (Process temp : readyQueue)
-                                System.out.println(temp.pid + "\t\t" + temp.at + "\t\t" + temp.bt + "\t\t" + temp.rt
-                                        + "\t\t" + temp.pr);
+                                System.out.println(temp.pid + "\t\t" + temp.at + "\t\t" + temp.bt + "\t\t" + temp.rt + "\t\t" + temp.pr);
                             int min_pr = process.pr;
                             int index = 0;
                             for (int j = 0; j < readyQueue.size(); j++) {
@@ -168,6 +173,12 @@ class Output extends Thread implements Global {
                             addProcessByArrivalTime();
                         }
                         ganttChart += timeline.lastElement();
+						if(readyQueue.size()==1 && globalQueue.size()==0){
+							timeline.add(timeline.lastElement() + readyQueue.firstElement().rt);
+							ganttChart += "____|P"+ readyQueue.firstElement().pid + "|____" +timeline.lastElement();
+							System.out.println(ganttChart);
+							readyQueue.remove(0);
+						}
                         if (preempt)
                             readyQueue.add(process);
                         else if (process.rt == 0) {
