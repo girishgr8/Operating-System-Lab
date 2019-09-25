@@ -1,8 +1,11 @@
+package Exp9;
+
+import java.util.Collections;
 import java.util.Scanner;
 import java.util.TreeSet;
 import java.util.Vector;
 
-// Object of FAT class stores the File Allocation Table or Directory Table....
+
 class FAT{
   String fileName;
   int fileSize;
@@ -24,18 +27,19 @@ class ContiguousAllocation{
 	static int totalBlocks;
 	static String memory[];
 	static int cntFree;
-	static TreeSet<Integer> freeBlocks = new TreeSet<Integer>();
-
+	static Vector<Integer> freeBlocks = new Vector<Integer>();
+	static Vector<Integer> hashValues = new Vector<Integer>();
+	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
-		System.out.println("\t\tContiguous File Allocation Scheme\n");
 		ContiguousAllocation.totalMemorySize = totalMemorySize;
 		ContiguousAllocation.totalBlockSize = totalBlockSize;
 		ContiguousAllocation.totalBlocks = totalBlocks;
 	    memory= new String[totalBlocks];
-	    for(int i=0;i<totalBlocks;i++)
-	        freeBlocks.add(i);
+	    for(int i=0;i<totalBlocks;i++) 
+	    	freeBlocks.add(i);
+	    cntFree = totalBlocks;
 	    int choice;
-	    System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	    System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	    choice = sc.nextInt();
 	    do{
 	      switch(choice){
@@ -45,115 +49,104 @@ class ContiguousAllocation{
 	        case 4: showFATTable(); break;
 	        default: break;
 	      }
-	      System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	      System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	      choice = sc.nextInt();
 	    }while(choice!=5);
 	}
-
 	public static void createFile(){
 	    System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
+	    if(hashValues.contains(fileName.hashCode())) {
+	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+	    	return;
+	    }
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
 	    System.out.println("Number of blocks needed to allocate new file \""+fileName+"\" are: "+blocksNeeded);
 	    bptr = allocateContiguousAvailable(blocksNeeded);
 	    if(bptr!=-1) {
-	    	FAT file = new FAT(fileName,fileSize,bptr);
-	    	fat.add(file);
+		    FAT file = new FAT(fileName,fileSize,bptr);
+		    fat.add(file);
+		    hashValues.add(fileName.hashCode());
 	    }
 	    else {
 	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
 	    	showAllAvailableFiles();
-	    	System.out.printf("Do you want to delete some file ? Y or N: ");
-	    	if(sc.next().equals("Y"))
-	    		deleteFile();
 	    }
 	}
-
-	public static void deleteFile(){
-		System.out.printf("Enter name of file you want to delete: ");
-		String fileName = sc.next();
-		deallocateContiguousBlocks(fileName);
-	}
+	  public static void deleteFile(){
+		  System.out.printf("Enter name of file you want to delete: ");
+		  String fileName = sc.next();
+		  deallocateContiguousBlocks(fileName);
+	  }
 	  
-	public static void showFATTable() {
-		System.out.println("\n\t\t\tFAT Table for Contiguous File Allocation Scheme: ");
-		System.out.println("SrNo.\tFile Name\t\t\tFile Size\t\tStartBlock");
-		int i = 1;
-		for(FAT file: fat)
-			System.out.println((i++)+"\t"+file.fileName+"\t\t\t\t"+file.fileSize+"KB\t\t\t"+file.startBlock);
-		System.out.println();
-	}
+	  public static void showFATTable() {
+		  System.out.println("\n\t\t\tFAT Table for Contiguous File Allocation Scheme: ");
+		  System.out.println("SrNo.\tFile Name\t\t\tFile Size\t\tStartBlock");
+		  int i = 1;
+		  for(FAT file: fat)
+			  System.out.println((i++)+"\t"+file.fileName+"\t\t\t\t"+file.fileSize+"KB\t\t\t"+file.startBlock);
+		  System.out.println();
+	  }
 	  
-	public static void showAllAvailableFiles() {
-		System.out.println("\n\t\t\tList of available files: ");
-		System.out.println("SrNo.\tFile Name\t\t\t\tFile Size\t\t");
-		int i = 1;
-		for(FAT file: fat)
-			System.out.println((i++)+"\t"+file.fileName+"\t\t\t\t\t"+file.fileSize+"KB");
-		System.out.println();
-	}
-	
-	public static int allocateContiguousAvailable(int blocksNeeded) {
-		boolean isAvailable = false;
-		int startPtr = -1, endPtr = -1;
-		System.out.println("Free Blocks before allocation: "+freeBlocks);
-		if(blocksNeeded>freeBlocks.size())
-			return -1;
-		for(int i=0;i<totalBlocks;i++) {
-			startPtr = -1;
-			if(freeBlocks.contains(i)) {
-				int checkBlockCount = 0;
-				int j = i;
-				startPtr = i;
-				while(freeBlocks.contains(j)) {
-					checkBlockCount++;
-					if(checkBlockCount==blocksNeeded) {
-						isAvailable = true;
-						endPtr = j;
-						break;
-					}
-					j++;
-				}
-			}
-			if(isAvailable==true)
-				break;
-		}
-		  
-		if(isAvailable) {
-			cntFree-=(endPtr-startPtr+1);
-			for(int i=startPtr;i<=endPtr;i++)
-				freeBlocks.remove(i);
-		}
-		System.out.println("Free Blocks after allocation: "+freeBlocks);
-		  	return startPtr;
-	}
+	  public static void showAllAvailableFiles() {
+		  System.out.println("\n\t\t\tList of available files: ");
+		  System.out.println("SrNo.\tFile Name\t\t\t\tFile Size\t\t");
+		  int i = 1;
+		  for(FAT file: fat)
+			  System.out.println((i++)+"\t"+file.fileName+"\t\t\t\t\t"+file.fileSize+"KB");
+		  System.out.println();
+	  }
+	  public static int allocateContiguousAvailable(int blocksNeeded) {
+		  boolean isAvailable = false;
+		  int startPtr = -1;
+		  System.out.println("Free Blocks before allocation: "+freeBlocks);
+		  if(blocksNeeded>freeBlocks.size())
+			  return -1;
+		  int startIndex = -1, endIndex = -1;
+		  for(int i=0;i<=freeBlocks.size()-blocksNeeded;i++) {
+			  if((freeBlocks.get(i+blocksNeeded-1)-freeBlocks.get(i)+1)==blocksNeeded) {
+				  startPtr = freeBlocks.get(i);
+				  startIndex = i;
+				  endIndex = i+blocksNeeded-1;
+				  isAvailable = true;
+				  break;
+			  }
+		  }
+		  if(isAvailable) {
+			  cntFree-=blocksNeeded;
+			  for(int j = endIndex;j>= startIndex;j--) 
+				  freeBlocks.remove(j);
+		  }
+		  System.out.println("Free Blocks after allocation: "+freeBlocks);
+		  return startPtr;
+	  }
 
-	public static void deallocateContiguousBlocks(String fileName) {
-		int start = -1, end = -1;
-		System.out.println("Free Blocks before deallocation: "+freeBlocks);
-		for(FAT file: fat) {
-			if(file.fileName.equals(fileName)) {
-				start = file.startBlock;
-				end = start + (int) file.fileSize/totalBlockSize;
-				fat.remove(file);
-				break;
-			 } 
-		}
-
-		if(start!=-1) {
-			while(start<=end) {
-				freeBlocks.add(start);
-				cntFree++; start++;
-			}
-			System.out.println("Deleted file "+fileName+"successfully.");
-		}
-		else 
-			System.out.println("File "+fileName+" not found");  
-		System.out.println("Free Blocks after deallocation: "+freeBlocks);
-		return;
-	}
+	  public static void deallocateContiguousBlocks(String fileName) {
+		  int start = -1, end = -1;
+		  System.out.println("Free Blocks before deallocation: "+freeBlocks);
+		  for(FAT file: fat) {
+			  if(file.fileName.equals(fileName)) {
+				  start = file.startBlock;
+				  end = start + (int) file.fileSize/totalBlockSize;
+				  fat.remove(file);
+				  break;
+			  } 
+		  }
+		  if(start!=-1) {
+			  while(start<=end) {
+				  freeBlocks.add(start);
+				  cntFree++; start++;
+			  }
+			  System.out.println("Deleted file "+fileName+" successfully.");
+		  }
+		  else 
+			  System.out.println("File "+fileName+" not found");
+		  Collections.sort(freeBlocks);
+		  System.out.println("Free Blocks after deallocation: "+freeBlocks);
+		  return;
+	  }
 }
 
 
@@ -178,9 +171,9 @@ class LinkedAllocation{
 	static String memory[];
 	static int cntFree;
 	static Vector<LinkedBlock> freeBlocks = new Vector<LinkedBlock>();
-
+	static Vector<Integer> hashValues = new Vector<Integer>();
+	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
-		System.out.println("\t\tLinked File Allocation Scheme\n");
 		LinkedAllocation.totalMemorySize = totalMemorySize;
 		LinkedAllocation.totalBlockSize = totalBlockSize;
 		LinkedAllocation.totalBlocks = totalBlocks;
@@ -190,7 +183,7 @@ class LinkedAllocation{
 	        freeBlocks.add(b);
 		}
 	    int choice;
-	    System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	    System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	    choice = sc.nextInt();
 	    do{
 	      switch(choice){
@@ -200,13 +193,17 @@ class LinkedAllocation{
 	        case 4: showFATTable(); break;
 	        default: break;
 	      }
-	      System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	      System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	      choice = sc.nextInt();
 	    }while(choice!=5);
 	}
 	public static void createFile() {
 		System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
+	    if(hashValues.contains(fileName.hashCode())) {
+	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+	    	return;
+	    }
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
@@ -217,22 +214,11 @@ class LinkedAllocation{
 	    	System.out.println("Created new file: \""+fileName+"\"");
 	    	FAT file = new FAT(fileName,fileSize,bptr);
 	    	fat.add(file);
+	    	hashValues.add(fileName.hashCode());
 	    }
 	    else {
-	    	System.out.println("Insufficient memory. Could not create new file: \""+fileName+"\". ");
-	    	System.out.println("Free some memory by deleting some file. Do you want to delete some file? Y or N");
-	    	if(sc.next().equals("Y")) {
-	    		showAllAvailableFiles();
-	    		deleteFile();
-	    		bptr = allocateBlocks(blocksNeeded);
-	    	    if(bptr!=-1) {
-	    	    	System.out.println("Created new file: \""+fileName+"\"");
-	    	    	FAT file = new FAT(fileName,fileSize,bptr);
-	    	    	fat.add(file);
-	    	    }
-	    	}else {
-	    		System.out.println("Could not create a new file");
-	    	}
+	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
+	    	showAllAvailableFiles();
 	    }
 	}
 	
@@ -275,7 +261,6 @@ class LinkedAllocation{
 		int ptr = -1;
 		System.out.println("Free blocks before deallocation: "+cntFree);
 		FAT delFile = new FAT();
-		System.out.println("Free blocks before deallocation: "+cntFree);
 		for(FAT file: fat) {
 			if(file.fileName.equals(fileName)) {
 				delFile = file;
@@ -295,6 +280,7 @@ class LinkedAllocation{
 			ptr = freeBlocks.get(ptr).nextPtr;
 			freeBlocks.get(prevPtr).nextPtr=-1;
 		}
+		hashValues.remove(fileName.hashCode());
 		fat.remove(delFile);
 		System.out.println("Free blocks after deallocation: "+cntFree);
 	}
@@ -351,8 +337,9 @@ class IndexedAllocation{
 	static String memory[];
 	static int cntFree;
 	static Vector<IndexBlock> freeBlocks = new Vector<IndexBlock>();
+	static Vector<Integer> hashValues = new Vector<Integer>();
+	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
-		System.out.println("\t\Indexed File Allocation Scheme\n");
 		IndexedAllocation.totalMemorySize = totalMemorySize;
 		IndexedAllocation.totalBlockSize = totalBlockSize;
 		IndexedAllocation.totalBlocks = totalBlocks;
@@ -363,7 +350,7 @@ class IndexedAllocation{
 		}
 		
 	    int choice;
-	    System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	    System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	    choice = sc.nextInt();
 	    do{
 	      switch(choice){
@@ -373,13 +360,17 @@ class IndexedAllocation{
 	        case 4: showFATTable(); break;
 	        default: break;
 	      }
-	      System.out.printf("Choose operation you want to perform:\n1)Create new file\t2)Delete a file\t3)Show all available files\t4)Show FAT table\t5)Exit\nEnter your choice: ");
+	      System.out.printf("Choose operation you want to perform:\n1)Create new file\n2)Delete a file\n3)Show all available files\n4)Show FAT table\n5)Exit\nEnter your choice: ");
 	      choice = sc.nextInt();
 	    }while(choice!=5);
 	}
 	public static void createFile() {
 		System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
+	    if(hashValues.contains(fileName.hashCode())) {
+	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+	    	return;
+	    }
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
@@ -390,22 +381,11 @@ class IndexedAllocation{
 	    	System.out.println("Created new file: \""+fileName+"\"");
 	    	FAT file = new FAT(fileName,fileSize,bptr);
 	    	fat.add(file);
+	    	hashValues.add(fileName.hashCode());
 	    }
 	    else {
-	    	System.out.println("Insufficient memory. Could not create new file: \""+fileName+"\".");
-	    	System.out.println("Free some memory by deleting some file. Do you want to delete some file? Y or N");
-	    	if(sc.next().equals("Y")) {
-	    		showAllAvailableFiles();
-	    		deleteFile();
-	    		bptr = allocateBlocks(blocksNeeded+1);
-	    	    if(bptr!=-1) {
-	    	    	System.out.println("Created new file: \""+fileName+"\"");
-	    	    	FAT file = new FAT(fileName,fileSize,bptr);
-	    	    	fat.add(file);
-	    	    }
-	    	}else {
-	    		System.out.println("Could not create a new file");
-	    	}
+	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
+	    	showAllAvailableFiles();
 	    }
 	}
 	
@@ -470,6 +450,7 @@ class IndexedAllocation{
 		}
 		freeBlocks.get(startPtr).isFree = true;
 		cntFree++;
+		hashValues.remove(fileName.hashCode());
 		System.out.println("Free blocks after deallocation: "+cntFree);
 		fat.remove(delFile);
 	}
@@ -482,7 +463,6 @@ class IndexedAllocation{
 			System.out.println((i++)+"\t"+file.fileName+"\t\t\t\t\t"+file.fileSize+"KB");
 		System.out.println();
 	}
-
 	public static void showFATTable() {
 		System.out.println("\n\t\t\tFAT Table for Indexed File Allocation Scheme: ");
 		System.out.println("SrNo.\tFile Name\t\t\tFile Size\t\tIndexBlock\t\tPointers");
@@ -502,31 +482,31 @@ class IndexedAllocation{
 
 
 public class FileAllocationStrategy {
-  	static Scanner sc = new Scanner(System.in);
-  	static Vector<FAT> fat = new Vector<>();
-  	static int totalBlockSize;
-  	static int totalMemorySize; 
-  	static int totalBlocks;
+  static Scanner sc = new Scanner(System.in);
+  static Vector<FAT> fat = new Vector<>();
+  static int totalBlockSize;
+  static int totalMemorySize; 
+  static int totalBlocks;
   
-  	public static void main(String[] args) {
-		System.out.println("\t\tFile Allocation Strategies\n");
-		System.out.printf("Enter total memory size in KB: ");
-	    totalMemorySize = sc.nextInt(); 
-	    System.out.printf("Enter size of each block in KB: ");
-	    totalBlockSize = sc.nextInt();
-	    totalBlocks = (int) totalMemorySize/totalBlockSize;
-	    System.out.println("Total number of blocks present in memory: "+totalBlocks);
-	    System.out.printf("1)Contiguous Allocation\n2)Linked Allocation\n3)Indexed Allocation\n4)Exit\nEnter your choice: ");
-	    int choice = sc.nextInt();
-    	do {
-	    	switch(choice) {
-	    		case 1: ContiguousAllocation.performAllocation(totalMemorySize,totalBlockSize, totalBlocks); break;
-	    		case 2: LinkedAllocation.performAllocation(totalMemorySize,totalBlockSize, totalBlocks); break;
-	    		case 3: IndexedAllocation.performAllocation(totalMemorySize, totalBlockSize, totalBlocks); break;
-	    		default: System.out.println("Invalid Choice\n"); break;
-    		}
-    		System.out.printf("1)Contiguous Allocation\n2)Linked Allocation\n3)Indexed Allocation\n4)Exit\nEnter your choice: ");
-        	choice = sc.nextInt();
-    	}while(choice!=4);
-  	}  
+  public static void main(String[] args) {
+	System.out.println("\t\tFile Allocation Strategies\n");
+	System.out.printf("Enter total memory size in KB: ");
+    totalMemorySize = sc.nextInt(); 
+    System.out.printf("Enter size of each block in KB: ");
+    totalBlockSize = sc.nextInt();
+    totalBlocks = (int) totalMemorySize/totalBlockSize;
+    System.out.println("Total number of blocks present in memory: "+totalBlocks);
+    System.out.printf("1)Contiguous Allocation\n2)Linked Allocation\n3)Indexed Allocation\n4)Exit\nEnter your choice: ");
+    int choice = sc.nextInt();
+    do {
+    	switch(choice) {
+    		case 1: ContiguousAllocation.performAllocation(totalMemorySize,totalBlockSize, totalBlocks); break;
+    		case 2: LinkedAllocation.performAllocation(totalMemorySize,totalBlockSize, totalBlocks); break;
+    		case 3: IndexedAllocation.performAllocation(totalMemorySize, totalBlockSize, totalBlocks); break;
+    		default: System.out.println("Invalid Choice\n"); break;
+    	}
+    	System.out.printf("1)Contiguous Allocation\n2)Linked Allocation\n3)Indexed Allocation\n4)Exit\nEnter your choice: ");
+        choice = sc.nextInt();
+    }while(choice!=4);
+  }  
 }
