@@ -1,5 +1,3 @@
-package Exp9;
-
 import java.util.Collections;
 import java.util.Scanner;
 import java.util.TreeSet;
@@ -28,7 +26,6 @@ class ContiguousAllocation{
 	static String memory[];
 	static int cntFree;
 	static Vector<Integer> freeBlocks = new Vector<Integer>();
-	static Vector<Integer> hashValues = new Vector<Integer>();
 	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
 		ContiguousAllocation.totalMemorySize = totalMemorySize;
@@ -56,10 +53,12 @@ class ContiguousAllocation{
 	public static void createFile(){
 	    System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
-	    if(hashValues.contains(fileName.hashCode())) {
-	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
-	    	return;
-	    }
+	    for(FAT file: fat){
+			if(file.fileName.equals(fileName)) {
+				System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+				return;
+			}
+		}
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
@@ -68,7 +67,6 @@ class ContiguousAllocation{
 	    if(bptr!=-1) {
 		    FAT file = new FAT(fileName,fileSize,bptr);
 		    fat.add(file);
-		    hashValues.add(fileName.hashCode());
 	    }
 	    else {
 	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
@@ -171,7 +169,6 @@ class LinkedAllocation{
 	static String memory[];
 	static int cntFree;
 	static Vector<LinkedBlock> freeBlocks = new Vector<LinkedBlock>();
-	static Vector<Integer> hashValues = new Vector<Integer>();
 	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
 		LinkedAllocation.totalMemorySize = totalMemorySize;
@@ -200,10 +197,12 @@ class LinkedAllocation{
 	public static void createFile() {
 		System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
-	    if(hashValues.contains(fileName.hashCode())) {
-	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
-	    	return;
-	    }
+		for(FAT file: fat){
+			if(file.fileName.equals(fileName)) {
+				System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+				return;
+			}
+		}
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
@@ -214,7 +213,6 @@ class LinkedAllocation{
 	    	System.out.println("Created new file: \""+fileName+"\"");
 	    	FAT file = new FAT(fileName,fileSize,bptr);
 	    	fat.add(file);
-	    	hashValues.add(fileName.hashCode());
 	    }
 	    else {
 	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
@@ -268,6 +266,7 @@ class LinkedAllocation{
 				break;
 			}
 		}
+		System.out.println("Pointer ptr = "+ptr);
 		// If the initial startPointer doesn't exist.....
 		if(ptr==-1) {
 			System.out.println("File "+fileName+" is not found");
@@ -280,7 +279,6 @@ class LinkedAllocation{
 			ptr = freeBlocks.get(ptr).nextPtr;
 			freeBlocks.get(prevPtr).nextPtr=-1;
 		}
-		hashValues.remove(fileName.hashCode());
 		fat.remove(delFile);
 		System.out.println("Free blocks after deallocation: "+cntFree);
 	}
@@ -337,7 +335,6 @@ class IndexedAllocation{
 	static String memory[];
 	static int cntFree;
 	static Vector<IndexBlock> freeBlocks = new Vector<IndexBlock>();
-	static Vector<Integer> hashValues = new Vector<Integer>();
 	
 	public static void performAllocation(int totalMemorySize,int totalBlockSize, int totalBlocks) {
 		IndexedAllocation.totalMemorySize = totalMemorySize;
@@ -367,10 +364,12 @@ class IndexedAllocation{
 	public static void createFile() {
 		System.out.printf("Enter name for file you want to create: ");
 	    String fileName = sc.next();
-	    if(hashValues.contains(fileName.hashCode())) {
-	    	System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
-	    	return;
-	    }
+	    for(FAT file: fat){
+			if(file.fileName.equals(fileName)) {
+				System.out.println("File \""+fileName+"\" already exists. Please provide some other name to file.");
+				return;
+			}
+		}
 	    System.out.printf("Enter file size in KB: ");
 	    int fileSize = sc.nextInt();
 	    int blocksNeeded = (int) Math.ceil((double)fileSize/(double)totalBlockSize);
@@ -381,7 +380,6 @@ class IndexedAllocation{
 	    	System.out.println("Created new file: \""+fileName+"\"");
 	    	FAT file = new FAT(fileName,fileSize,bptr);
 	    	fat.add(file);
-	    	hashValues.add(fileName.hashCode());
 	    }
 	    else {
 	    	System.out.println("Sufficient memory not available to store new file. Delete some file and free up your memory.");
@@ -450,7 +448,6 @@ class IndexedAllocation{
 		}
 		freeBlocks.get(startPtr).isFree = true;
 		cntFree++;
-		hashValues.remove(fileName.hashCode());
 		System.out.println("Free blocks after deallocation: "+cntFree);
 		fat.remove(delFile);
 	}
