@@ -13,27 +13,27 @@ interface Global {
     static Vector<Integer> notServed = new Vector<Integer>();
 }
 
-public class CSCAN implements Global {
+public class CLOOK implements Global {
     int headPosition = r.nextInt((int) (totalTracks / 2));
     int totalHeadMovement = 0;
     boolean over = false;
     String direction = "";
     boolean dontIncludeSeek = false;
-    static CSCAN cscan;
+    static CLOOK clook;
 
     public static void main(String[] args) throws InterruptedException {
-        System.out.println("\nCSCAN Disk Scheduling");
-        cscan = new CSCAN();
-        cscan.direction = "right";
+        System.out.println("\nCLOOK Disk Scheduling");
+        clook = new CLOOK();
+        clook.direction = "right";
 
         Thread.currentThread().sleep(500);
         System.out.println("Total number of tracks on the disk are: " + totalTracks);
-        System.out.println("Current Header Position is: " + cscan.headPosition);
+        System.out.println("Current Header Position is: " + clook.headPosition);
         System.out.println("Total number of Disk requests =  " + n);
-        System.out.println("CSCAN direction: '" + cscan.direction.toUpperCase() + "'\n");
-        Output output = new Output(cscan);
+        System.out.println("CLOOK direction: '" + clook.direction.toUpperCase() + "'\n");
+        Output output = new Output(clook);
         output.setName("Output Thread");
-        ForLoop forloop = new ForLoop(cscan);
+        ForLoop forloop = new ForLoop(clook);
         forloop.setName("ForLoop Thread");
         forloop.start();
         output.start();
@@ -41,23 +41,18 @@ public class CSCAN implements Global {
 
     public int[] findNextTrackOnPath() {
         int arr[] = new int[2];
-        if (headPosition == totalTracks) {
-            arr[0] = -1;
-            arr[1] = 0;
-            cscan.dontIncludeSeek = true;
-            return arr;
-        }
         if (served.size() == 0) {
             arr[0] = -1;
-            arr[1] = totalTracks;
+            arr[1] = 0;
+            clook.dontIncludeSeek = true;
             return arr;
         }
-        int new_track = cscan.headPosition;
+        int new_track = clook.headPosition;
         int minimum = Integer.MAX_VALUE;
         int index = 0;
         for (int i = 0; i < served.size(); i++) {
-            if (Math.abs(served.get(i) - cscan.headPosition) < minimum) {
-                minimum = Math.abs(served.get(i) - cscan.headPosition);
+            if (Math.abs(served.get(i) - clook.headPosition) < minimum) {
+                minimum = Math.abs(served.get(i) - clook.headPosition);
                 new_track = served.get(i);
                 index = i;
             }
@@ -73,23 +68,23 @@ public class CSCAN implements Global {
         notServed.clear();
         System.out.println("\nTrack Queue: " + trackNumbers);
         for (int i = 0; i < trackNumbers.size(); i++) {
-            int my_move = trackNumbers.get(i) - cscan.headPosition;
+            int my_move = trackNumbers.get(i) - clook.headPosition;
             if (my_move < 0) {
-                if (cscan.direction.equals("right"))
+                if (clook.direction.equals("right"))
                     notServed.add(trackNumbers.get(i));
                 else
                     served.add(trackNumbers.get(i));
             }
             if (my_move > 0) {
-                if (cscan.direction.equals("right"))
+                if (clook.direction.equals("right"))
                     served.add(trackNumbers.get(i));
                 else
                     notServed.add(trackNumbers.get(i));
             }
         }
         int arr[] = findNextTrackOnPath();
-        System.out.println("Will be served in this CSCAN: " + served);
-        System.out.println("Will not served in this CSCAN: " + notServed);
+        System.out.println("Will be served in this CLOOK: " + served);
+        System.out.println("Will not served in this CLOOK: " + notServed);
         if (arr[0] != -1)
             served.remove(arr[0]);
         if (trackNumbers.contains(arr[1])) {
@@ -102,10 +97,10 @@ public class CSCAN implements Global {
 
 class ForLoop extends Thread implements Global {
     static int trackNo = 0;
-    CSCAN cscan;
+    CLOOK clook;
 
-    public ForLoop(CSCAN cscan) {
-        this.cscan = cscan;
+    public ForLoop(CLOOK clook) {
+        this.clook = clook;
     }
 
     public void run() {
@@ -113,12 +108,12 @@ class ForLoop extends Thread implements Global {
             for (int i = 0; i < n; i++) {
                 Thread.currentThread().sleep(1000);
                 trackNo = r.nextInt(totalTracks);
-                if (trackNo == cscan.headPosition || trackNumbers.contains(trackNo))
+                if (trackNo == clook.headPosition || trackNumbers.contains(trackNo))
                     i--;
                 else
                     trackNumbers.add(trackNo);
             }
-            cscan.over = true;
+            clook.over = true;
         } catch (Exception e) {
             System.out.println(e);
         }
@@ -127,45 +122,41 @@ class ForLoop extends Thread implements Global {
 
 class Output extends Thread implements Global {
     String headTraversal = "";
-    CSCAN cscan;
+    CLOOK clook;
 
-    public Output(CSCAN cscan) {
-        this.cscan = cscan;
-        this.headTraversal = this.cscan.headPosition + " ";
+    public Output(CLOOK clook) {
+        this.clook = clook;
+        this.headTraversal = this.clook.headPosition + " ";
     }
 
     public void run() {
         try {
             int seekTime = 0;
-            while (!cscan.over) {
+            while (!clook.over) {
                 Thread.currentThread().sleep(2500);
                 while (trackNumbers.size() != 0) {
-                    int moveToTrack = cscan.getNextToServe();
-                    System.out.println("Header movement: " + cscan.headPosition + " -> " + moveToTrack);
+                    int moveToTrack = clook.getNextToServe();
+                    System.out.println("Header movement: " + clook.headPosition + " -> " + moveToTrack);
                     headTraversal += "-> " + moveToTrack + " ";
-                    seekTime = (Math.abs(cscan.headPosition - moveToTrack));
+                    seekTime = (Math.abs(clook.headPosition - moveToTrack));
                     System.out.printf(headTraversal + "");
-                    if (!cscan.dontIncludeSeek) {
-                        cscan.totalHeadMovement += seekTime;
+                    if (!clook.dontIncludeSeek) {
+                        clook.totalHeadMovement += seekTime;
                         System.out.println("\t\tSeek Time needed: " + seekTime);
                     }
                     System.out.println();
-                    cscan.headPosition = moveToTrack;
-                    if (!cscan.dontIncludeSeek) {
-                        cscan.dontIncludeSeek = false;
-                        Thread.currentThread().sleep(seekTime * 75);
+                    clook.headPosition = moveToTrack;
+                    if (!clook.dontIncludeSeek) {
+                        clook.dontIncludeSeek = false;
+                        Thread.currentThread().sleep(seekTime * 80);
                     }
                 }
             }
-			headTraversal += "-> " + totalTracks+" "; 
-            seekTime = Math.abs(cscan.headPosition - totalTracks);
-            cscan.totalHeadMovement += seekTime;
-			System.out.println("\n" + headTraversal + "\t\tSeek Time needed: " + seekTime + "\n\n");
-			headTraversal+= "-> 0";
-            System.out.println(headTraversal+"\n");
-            System.out.println("Total head movement to serve all requests: " + cscan.totalHeadMovement);
+            headTraversal += "-> 0";
+            System.out.println("\n" + headTraversal);
+            System.out.println("Total head movement to serve all requests: " + clook.totalHeadMovement);
             System.out.printf("Time required to serve all requests: %.2f",
-                    (double) (cscan.totalHeadMovement * unitSeek));
+                    (double) (clook.totalHeadMovement * unitSeek));
             System.out.println(" millisecs");
         } catch (Exception e) {
             System.out.println(e);
