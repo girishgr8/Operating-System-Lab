@@ -63,14 +63,22 @@ class Safety{
 		}
 		if(runLoop==true && sequence.size()==b.n)
 			return sequence;
-		else
+		else{
+      Vector<String> notSafe = new Vector<String>();
+      for(int i=0;i<b.n;i++)
+        if(!sequence.contains("P"+i))
+          notSafe.add("P"+i);
+      
+      System.out.println("System is not in safe state currently...Deadlock exists !!!");
+      System.out.println("Processes in deadlock are: "+notSafe);
 			return null;
 	}
+}
 }
 
 
 
-public class BankerAlgorithm {
+class BankerAlgorithm {
 	int m,n;
 	int resource[];
 	int available[];
@@ -86,7 +94,7 @@ public class BankerAlgorithm {
 		this.allocation = allocation;
 		this.need = need;
 	}
-	public static void main(String[] args) {
+	public static void BankerAlgorithm(String[] args) {
 		Scanner sc = new Scanner(System.in);
 		System.out.println("\t\tBanker's Algorithm\n");
 //		m: number of resources
@@ -97,30 +105,37 @@ public class BankerAlgorithm {
 		System.out.printf("Enter number of processes: ");
 		n = sc.nextInt();
 		int resource[] = new int[m];
+    Vector<String> process = new Vector<String>();
 		int available[] = new int[m];
 		int claim[][] = new int[n][m];
 		int allocation[][] =  new int[n][m];
 		int need[][] =  new int[n][m];
-		
-		// Input resource vector....
+    for(int i=0;i<n;i++)
+      process.add("P"+i);
+		// Input resource vector......
 		System.out.printf("Enter number of instances of each resource: ");
 		for(int i=0;i<m;i++)
 			resource[i] = sc.nextInt();
 		
-
+		// Input claim matrix....
+		System.out.println("Enter Claim Matrix: ");
+		for(int i=0;i<n;i++){
+			for(int j=0;j<m;j++){
+				claim[i][j] = sc.nextInt();
+				if(claim[i][j]>resource[j]){
+          System.out.println("Kindly provide valid input.....");
+					System.exit(0);
+        }
+			}
+		}
 		// Input allocation matrix....
 		System.out.println("Enter Allocation Matrix: ");
 		for(int i=0;i<n;i++)
 			for(int j=0;j<m;j++)
 				allocation[i][j] = sc.nextInt();
 		
-		// Input claim matrix....
-		System.out.println("Enter Claim Matrix: ");
-		for(int i=0;i<n;i++)
-			for(int j=0;j<m;j++)
-				claim[i][j] = sc.nextInt();
-		
 		BankerAlgorithm b = new BankerAlgorithm(m,n,resource,available,claim,allocation,need);
+		b.checkForValidAllocation(b);
 		b.findAvailableVector(b);
 		// Find the Need Matrix....  
 		b.findNeedMatrix(b);
@@ -147,7 +162,6 @@ public class BankerAlgorithm {
 		if(sequence!=null)
 			System.out.println("System is safe.\tThe Safe Sequence is: "+sequence);
 		else {
-			System.out.println("System is not in safe state currently...Deadlock exists !!!");
 			System.exit(0);
 		}
 		sc.close();
@@ -171,15 +185,36 @@ public class BankerAlgorithm {
 			for(int j=0;j<b.n;j++)
 				b.available[i]+= b.allocation[j][i];
 			b.available[i]= b.resource[i]-b.available[i];
+      if(b.available[i]<0){
+        System.out.println("You have entered invalid Allocation Matrix. Allocated is more than Available");
+        System.exit(0);
+      }
 		}
 		
 		System.out.println("Available Vector is: "+Arrays.toString(available));
+	}
+	
+	public void checkForValidAllocation(BankerAlgorithm b){
+		for(int i=0;i<b.n;i++){
+			for(int j=0;j<b.m;j++){
+				if(allocation[i][j]>claim[i][j]){
+					System.out.println("Kindly avoid valid inputs....");
+					System.exit(0);
+				}
+			}
+		}
 	}
 }
 
 /*
  
 Example 1: 
+Claim Matrix:
+7 5 3
+3 2 2 
+9 0 2
+2 2 2
+4 3 3
 
 Allocation Matrix:
 0 1 0
@@ -188,22 +223,8 @@ Allocation Matrix:
 2 1 1
 0 0 2
 
-Claim Matrix:
-7 5 3
-3 2 2 
-9 0 2
-2 2 2
-4 3 3
 **************************************************************************
 Example 2: 
-
-Allocation Matrix:
-2 0 2 1
-0 1 1 1
-4 1 0 2
-1 0 0 1
-1 1 0 0
-1 0 1 1
 
 Claim Matrix: 
 9 5 5 5
@@ -212,5 +233,13 @@ Claim Matrix:
 3 3 3 2
 5 2 2 1
 4 4 4 4
+
+Allocation Matrix:
+2 0 2 1
+0 1 1 1
+4 1 0 2
+1 0 0 1
+1 1 0 0
+1 0 1 1
  
 */
